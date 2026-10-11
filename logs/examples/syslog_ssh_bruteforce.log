@@ -1,0 +1,5 @@
+<38>Oct 12 10:15:01 srv-web01 sshd[4211]: Failed password for invalid user admin from 203.0.113.45 port 51122 ssh2
+<38>Oct 12 10:15:03 srv-web01 sshd[4211]: Failed password for invalid user admin from 203.0.113.45 port 51122 ssh2
+<38>Oct 12 10:15:05 srv-web01 sshd[4213]: Failed password for root from 203.0.113.45 port 51140 ssh2
+<38>Oct 12 10:15:07 srv-web01 sshd[4215]: Failed password for root from 203.0.113.45 port 51158 ssh2
+<38>Oct 12 10:15:09 srv-web01 sshd[4217]: Accepted password for root from 203.0.113.45 port 51171 ssh2

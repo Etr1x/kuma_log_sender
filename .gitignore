@@ -1,0 +1,25 @@
+# Старая версия утилиты (PowerShell + ncat) — хранится только локально
+/old_project_log_to_kuma/
+
+# Сборка
+/dist/
+/kuma_log_sender
+/kuma_log_sender.exe
+*.test
+*.out
+
+# Пользовательские данные: свои коллекторы, состояние и журнал в репозиторий не попадают
+/collectors.json
+/collectors.json.legacy.bak
+/state.json
+/sender.log
+/sender.log.1
+
+# В logs/ коммитятся только примеры из logs/examples/
+/logs/*
+!/logs/examples/
+
+# Служебное
+.claude/
+.idea/
+.vscode/

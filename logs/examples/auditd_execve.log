@@ -1,0 +1,5 @@
+type=SYSCALL msg=audit(1760264101.123:4242): arch=c000003e syscall=59 success=yes exit=0 a0=55d0c8a2b2a0 a1=55d0c8a2e3c0 a2=55d0c8a1f010 a3=8 items=2 ppid=2211 pid=2290 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts0 ses=3 comm="curl" exe="/usr/bin/curl" key="exec"
+type=EXECVE msg=audit(1760264101.123:4242): argc=3 a0="curl" a1="-o" a2="/tmp/payload.sh"
+type=CWD msg=audit(1760264101.123:4242): cwd="/root"
+type=PATH msg=audit(1760264101.123:4242): item=0 name="/usr/bin/curl" inode=131337 dev=fd:00 mode=0100755 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL
+type=PROCTITLE msg=audit(1760264101.123:4242): proctitle=6375726C002D6F002F746D702F7061796C6F61642E7368

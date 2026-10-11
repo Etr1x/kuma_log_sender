@@ -1,0 +1,3 @@
+CEF:0|TESTVENDOR|TESTPRODUCT|1.1.1.1|TEST_EVENT|This is a test event|Low|message="just a test coming through"
+CEF:0|TESTVENDOR|TESTPRODUCT|1.1.1.1|LOGIN_FAILED|Authentication failure|Medium|src=10.0.0.5 suser=ivanov dst=10.0.0.10 dpt=22 msg=Failed password
+CEF:0|TESTVENDOR|TESTPRODUCT|1.1.1.1|LOGIN_OK|Authentication success|Low|src=10.0.0.5 suser=ivanov dst=10.0.0.10 dpt=22 msg=Accepted password

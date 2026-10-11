@@ -1,0 +1,17 @@
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}" />
+    <EventID>4625</EventID>
+    <Level>0</Level>
+    <TimeCreated SystemTime="2026-10-12T10:15:01.000000000Z" />
+    <Channel>Security</Channel>
+    <Computer>WS-042.example.local</Computer>
+  </System>
+  <EventData>
+    <Data Name="TargetUserName">ivanov</Data>
+    <Data Name="TargetDomainName">EXAMPLE</Data>
+    <Data Name="Status">0xc000006d</Data>
+    <Data Name="LogonType">3</Data>
+    <Data Name="IpAddress">203.0.113.45</Data>
+  </EventData>
+</Event>

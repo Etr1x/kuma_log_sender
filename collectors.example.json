@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "default_host": "kuma-collector.example.local",
+  "timeout_sec": 5,
+  "collectors": [
+    {
+      "name": "CEF TCP",
+      "description": "[OOTB] CEF, tcp-коннектор",
+      "protocol": "tcp",
+      "port": 5140,
+      "delimiter": "\\n"
+    },
+    {
+      "name": "KUMA Agent WEC",
+      "description": "http-коннектор с TLS, многострочные события",
+      "protocol": "http",
+      "port": 5365,
+      "delimiter": "\\0",
+      "tls": true,
+      "path": "/input"
+    },
+    {
+      "name": "Linux Auditd",
+      "protocol": "udp",
+      "port": 5916,
+      "delimiter": "\\n"
+    },
+    {
+      "name": "Syslog TCP+TLS (другой сервер)",
+      "description": "пример коллектора на отдельном хосте",
+      "protocol": "tcp",
+      "host": "10.0.0.15",
+      "port": 6514,
+      "delimiter": "\\n",
+      "tls": true
+    },
+    {
+      "name": "Syslog-CEF UDP",
+      "description": "[OOTB] Syslog-CEF, udp-коннектор без разделителя",
+      "protocol": "udp",
+      "port": 5144,
+      "delimiter": ""
+    }
+  ]
+}
