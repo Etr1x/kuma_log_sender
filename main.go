@@ -18,8 +18,9 @@ import (
 	"github.com/Etr1x/kuma_log_sender/internal/tui"
 )
 
-// version — номер версии; отсюда же его берёт сборщик архивов (tools/bundle).
-var version = "1.0.0"
+// version подставляет сборщик архивов (tools/bundle) через -ldflags: в релизах это
+// номер из тега, в остальных сборках — описание коммита или dev.
+var version = "dev"
 
 func main() {
 	os.Exit(run(os.Args[1:]))

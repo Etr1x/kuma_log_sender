@@ -1,0 +1,54 @@
+# Выпуск релиза: отправка тега вида v1.2.3 запускает тесты на Linux и Windows,
+# собирает архивы для обеих систем и публикует их в релизе с этим тегом.
+#
+#   git tag v1.2.3
+#   git push origin v1.2.3
+name: Релиз
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Тесты (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test ./...
+
+  release:
+    name: Сборка и публикация
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Сборка архивов
+        run: go run ./tools/bundle -version "${GITHUB_REF_NAME#v}"
+      - name: Публикация релиза
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --verify-tag \
+              --title "KUMA Log Sender ${GITHUB_REF_NAME#v}" \
+              --notes "Скачайте архив для своей системы, распакуйте в любую папку и запустите kuma_log_sender. Внутри — один исполняемый файл без внешних зависимостей, пример конфига, примеры логов и инструкция." \
+              --generate-notes
+          fi
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber

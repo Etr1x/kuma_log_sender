@@ -9,16 +9,16 @@ import (
 
 func TestParseDelimiter(t *testing.T) {
 	cases := map[string]Delimiter{
-		"":         DelimNone,
-		"none":     DelimNone,
-		`\n`:       DelimLF,
-		"\n":       DelimLF,
-		"LF":       DelimLF,
-		`\t`:       DelimTab,
-		"\t":       DelimTab,
-		`\0`:       DelimNUL,
-		"\x00":     DelimNUL,
-		"nullbyte": DelimNUL,
+		"":     DelimNone,
+		"none": DelimNone,
+		`\n`:   DelimLF,
+		"\n":   DelimLF,
+		"LF":   DelimLF,
+		`\t`:   DelimTab,
+		"\t":   DelimTab,
+		`\0`:   DelimNUL,
+		"\x00": DelimNUL,
+		"NUL":  DelimNUL,
 	}
 	for in, want := range cases {
 		got, err := ParseDelimiter(in)
@@ -31,53 +31,6 @@ func TestParseDelimiter(t *testing.T) {
 	}
 	if string(DelimNUL.Bytes()) != "\x00" || string(DelimLF.Bytes()) != "\n" || DelimNone.Bytes() != nil {
 		t.Error("Bytes() возвращает не те байты")
-	}
-}
-
-// Формат collectors.json старого скрипта log_to_kuma.ps1, включая BOM от PowerShell.
-const legacyJSON = "\xEF\xBB\xBF" + `[
-    { "Name": "Linux Auditd", "Port": 5916, "Description": "Linux Auditd udp\\5916", "Protocol": "udp", "UseHttps": false, "SpecialChar": "none" },
-    { "Name": "KUMA Agent WEC", "Port": 5365, "Description": "KUMA Agent WEC http\\5365", "Protocol": "http", "UseHttps": true, "SpecialChar": "nullbyte" },
-    { "Name": "CEF TCP collector", "Port": 5140, "Description": "[OOTB] CEF TCP\\5140", "Protocol": "tcp", "UseHttps": false, "SpecialChar": "none" }
-]`
-
-func TestLegacyImport(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "collectors.json")
-	if err := os.WriteFile(path, []byte(legacyJSON), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	s, err := Load(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !s.Legacy || len(s.Collectors) != 3 {
-		t.Fatalf("Legacy=%v, collectors=%d", s.Legacy, len(s.Collectors))
-	}
-	// Отсортировано по имени: CEF, KUMA Agent WEC, Linux Auditd.
-	cef, wec, auditd := s.Collectors[0], s.Collectors[1], s.Collectors[2]
-	if cef.Protocol != TCP || cef.Delimiter != DelimLF || cef.Description != `[OOTB] CEF TCP\5140` {
-		t.Errorf("CEF: %+v", cef)
-	}
-	if wec.Protocol != HTTP || !wec.TLS || wec.Delimiter != DelimNUL || wec.Path != "/input" || wec.Description != "" {
-		t.Errorf("WEC: %+v", wec)
-	}
-	if auditd.Protocol != UDP || auditd.Delimiter != DelimNone || auditd.Description != "" {
-		t.Errorf("Auditd: %+v", auditd)
-	}
-
-	backup, err := s.MigrateLegacy()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if raw, _ := os.ReadFile(backup); string(raw) != legacyJSON {
-		t.Error("резервная копия не совпадает с исходным файлом")
-	}
-	s2, err := Load(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if s2.Legacy || len(s2.Collectors) != 3 || s2.Collectors[1].Delimiter != DelimNUL {
-		t.Errorf("после миграции: %+v", s2.File)
 	}
 }
 

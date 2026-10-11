@@ -5,12 +5,12 @@
 /dist/
 /kuma_log_sender
 /kuma_log_sender.exe
+/kuma_log_sender.exe~
 *.test
 *.out
 
 # Пользовательские данные: свои коллекторы, состояние и журнал в репозиторий не попадают
 /collectors.json
-/collectors.json.legacy.bak
 /state.json
 /sender.log
 /sender.log.1

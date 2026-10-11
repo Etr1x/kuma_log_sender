@@ -91,7 +91,7 @@ type App struct {
 }
 
 // Open загружает конфиг, открывает журнал и готовит менеджер задач.
-// Некритичные проблемы (не открылся файл журнала, импортирован старый конфиг)
+// Некритичные проблемы (не открылся файл журнала, не создалась папка логов)
 // попадают в сам журнал.
 func Open(p Paths) (*App, error) {
 	store, err := config.Load(p.Config)
@@ -102,14 +102,6 @@ func Open(p Paths) (*App, error) {
 	a := &App{Paths: p, Store: store, Journal: jr, Jobs: job.NewManager(jr)}
 	if jerr != nil {
 		jr.Add(journal.Warn, 0, "%v", jerr)
-	}
-	if store.Legacy {
-		backup, err := store.MigrateLegacy()
-		if err != nil {
-			jr.Add(journal.Warn, 0, "конфиг старого формата прочитан, но сохранить его в новом не удалось: %v", err)
-		} else {
-			jr.Add(journal.Info, 0, "конфиг старого формата (log_to_kuma.ps1) сконвертирован, исходник сохранён в %s", filepath.Base(backup))
-		}
 	}
 	if err := os.MkdirAll(p.LogsDir, 0o755); err != nil {
 		jr.Add(journal.Warn, 0, "не удалось создать папку логов: %v", err)

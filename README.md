@@ -59,8 +59,9 @@
 
 ## Быстрый старт
 
-1. Распакуйте архив (`kuma_log_sender_<версия>_windows_amd64.zip` или
-   `..._linux_amd64.tar.gz`) в любую папку.
+1. Скачайте со страницы [релизов](https://github.com/Etr1x/kuma_log_sender/releases/latest)
+   архив для своей системы (`kuma_log_sender_<версия>_windows_amd64.zip` или
+   `..._linux_amd64.tar.gz`) и распакуйте его в любую папку.
 2. Запустите `kuma_log_sender.exe` (в Linux — `./kuma_log_sender`). Окно терминала должно
    быть не меньше 80×20 символов.
 3. Нажмите `g` и укажите **хост по умолчанию** — адрес сервера, на котором работают
@@ -153,13 +154,6 @@ kuma_log_sender listen -p tcp -P 5140 -d "\n"
 kuma_log_sender listen -p http -P 5365 -tls -d "\0"
 ```
 
-## Переход со старого log_to_kuma.ps1
-
-Скопируйте старый `collectors.json` в папку с новой программой и запустите её: файл будет
-преобразован в новый формат, а исходник сохранится как `collectors.json.legacy.bak`.
-После этого нажмите `g` и укажите хост по умолчанию — в старом скрипте он был задан
-в самом коде (`$KumaServer`).
-
 ## Сборка из исходников
 
 Нужен Go 1.26 или новее.
@@ -168,6 +162,15 @@ kuma_log_sender listen -p http -P 5365 -tls -d "\0"
 go test ./...                 # тесты
 go build -o kuma_log_sender.exe .
 go run ./tools/bundle         # архивы для Windows и Linux в папке dist
+```
+
+Релиз выпускается автоматически: отправка тега вида `v1.2.3` запускает
+[GitHub Actions](.github/workflows/release.yml) — тесты на Linux и Windows, сборку архивов
+и публикацию их на странице релизов. Номер версии берётся из тега.
+
+```text
+git tag v1.2.3
+git push origin v1.2.3
 ```
 
 Чтобы собирать в контуре без интернета, выполните на машине с интернетом `go mod vendor`

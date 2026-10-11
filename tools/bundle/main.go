@@ -1,8 +1,9 @@
 // Команда bundle собирает готовые к переносу архивы утилиты:
 //
-//	go run ./tools/bundle
+//	go run ./tools/bundle [-version 1.2.3]
 //
-// В папке dist появляются zip для Windows и tar.gz для Linux. В каждом — один
+// В папке dist появляются zip для Windows и tar.gz для Linux. Номер версии берётся
+// из параметра (так делает сборка релиза — по имени тега), иначе из git describe. В каждом — один
 // статически собранный исполняемый файл, пример конфига, примеры логов и документация.
 // Архивы пишутся средствами Go, поэтому сборка одинаково работает на Windows и Linux,
 // а у Linux-бинаря в архиве сохраняется бит исполнения.
@@ -20,7 +21,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -39,10 +39,15 @@ type entry struct {
 func main() {
 	targets := flag.String("targets", "windows/amd64,linux/amd64", "список GOOS/GOARCH через запятую")
 	out := flag.String("out", "dist", "папка для архивов")
+	version := flag.String("version", "", "номер версии; по умолчанию — из git describe")
 	flag.Parse()
 
-	version, err := readVersion()
-	check(err)
+	if *version == "" {
+		*version = gitVersion()
+	}
+	if _, err := os.Stat("main.go"); err != nil {
+		check(fmt.Errorf("запускайте из корня репозитория: %w", err))
+	}
 	check(os.MkdirAll(*out, 0o755))
 
 	var common []entry
@@ -67,7 +72,7 @@ func main() {
 			bin += ".exe"
 		}
 		tmp := filepath.Join(*out, ".build-"+goos+"-"+goarch, bin)
-		cmd := exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", tmp, ".")
+		cmd := exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w -X main.version="+*version, "-o", tmp, ".")
 		cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS="+goos, "GOARCH="+goarch)
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 		check(cmd.Run())
@@ -76,7 +81,7 @@ func main() {
 		check(os.RemoveAll(filepath.Dir(tmp)))
 
 		files := append([]entry{{path: bin, data: data, mode: 0o755}}, common...)
-		base := fmt.Sprintf("%s_%s_%s_%s", name, version, goos, goarch)
+		base := fmt.Sprintf("%s_%s_%s_%s", name, *version, goos, goarch)
 		var archive string
 		if goos == "windows" {
 			archive = filepath.Join(*out, base+".zip")
@@ -90,17 +95,15 @@ func main() {
 	}
 }
 
-// readVersion берёт номер версии из main.go — он задаётся в одном месте.
-func readVersion() (string, error) {
-	src, err := os.ReadFile("main.go")
-	if err != nil {
-		return "", fmt.Errorf("запускайте из корня репозитория: %w", err)
+// gitVersion описывает текущий коммит относительно последнего тега: 1.2.3 на самом
+// теге, 1.2.3-4-gabc1234 после него. Без git или тегов возвращает dev.
+func gitVersion() string {
+	out, err := exec.Command("git", "describe", "--tags", "--always", "--dirty").Output()
+	v := strings.TrimPrefix(strings.TrimSpace(string(out)), "v")
+	if err != nil || v == "" {
+		return "dev"
 	}
-	m := regexp.MustCompile(`var version = "([^"]+)"`).FindSubmatch(src)
-	if m == nil {
-		return "", fmt.Errorf("в main.go не найдена строка с версией")
-	}
-	return string(m[1]), nil
+	return v
 }
 
 func writeZip(path string, files []entry) error {

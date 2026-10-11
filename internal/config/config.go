@@ -48,7 +48,7 @@ const (
 var Delimiters = []Delimiter{DelimNone, DelimLF, DelimTab, DelimNUL}
 
 // ParseDelimiter понимает и запись KUMA (\n, \t, \0), и сами управляющие
-// символы, и словесные синонимы (в том числе nullbyte из старого формата).
+// символы, и словесные синонимы.
 func ParseDelimiter(s string) (Delimiter, error) {
 	switch s {
 	case "\n", "\r\n":
@@ -65,7 +65,7 @@ func ParseDelimiter(s string) (Delimiter, error) {
 		return DelimLF, nil
 	case `\t`, "tab":
 		return DelimTab, nil
-	case `\0`, "nul", "null", "nullbyte", "0", `\x00`, `\u0000`:
+	case `\0`, "nul", "null", "0", `\x00`, `\u0000`:
 		return DelimNUL, nil
 	}
 	return DelimNone, fmt.Errorf(`неизвестный разделитель %q (допустимо: \n, \t, \0 или пусто)`, s)
@@ -222,9 +222,6 @@ type File struct {
 type Store struct {
 	File
 	Path string
-	// Legacy выставляется, если файл был в формате старого скрипта log_to_kuma.ps1
-	// и сконвертирован на лету (см. MigrateLegacy).
-	Legacy bool
 }
 
 // Load читает конфиг. Отсутствующий файл — не ошибка: возвращается пустой Store.
@@ -237,19 +234,12 @@ func Load(path string) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("чтение %s: %w", path, err)
 	}
-	raw = bytes.TrimPrefix(raw, []byte{0xEF, 0xBB, 0xBF}) // PowerShell 5 пишет UTF-8 с BOM
+	raw = bytes.TrimPrefix(raw, []byte{0xEF, 0xBB, 0xBF}) // BOM добавляют «Блокнот» и PowerShell 5
 	trimmed := bytes.TrimSpace(raw)
 	if len(trimmed) == 0 {
 		return s, nil
 	}
-	if trimmed[0] == '[' {
-		cols, err := parseLegacy(trimmed)
-		if err != nil {
-			return nil, fmt.Errorf("разбор %s (старый формат): %w", path, err)
-		}
-		s.Collectors = cols
-		s.Legacy = true
-	} else if err := json.Unmarshal(tolerateNUL(trimmed), &s.File); err != nil {
+	if err := json.Unmarshal(tolerateNUL(trimmed), &s.File); err != nil {
 		return nil, fmt.Errorf("разбор %s: %s", path, describeJSONError(trimmed, err))
 	}
 	if s.TimeoutSec <= 0 {
@@ -311,68 +301,6 @@ func describeJSONError(raw []byte, err error) string {
 	offset := min(int(syn.Offset), len(raw))
 	line := 1 + bytes.Count(raw[:offset], []byte{'\n'})
 	return fmt.Sprintf("строка %d: %v", line, err)
-}
-
-// legacyCollector — запись из collectors.json старого PowerShell-скрипта.
-type legacyCollector struct {
-	Name        string
-	Port        int
-	Description string
-	Protocol    string
-	UseHttps    bool
-	SpecialChar string
-}
-
-func parseLegacy(raw []byte) ([]Collector, error) {
-	var old []legacyCollector
-	if err := json.Unmarshal(raw, &old); err != nil {
-		return nil, err
-	}
-	out := make([]Collector, 0, len(old))
-	for _, o := range old {
-		c := Collector{
-			Name:     o.Name,
-			Protocol: Protocol(strings.ToLower(o.Protocol)),
-			Port:     o.Port,
-			TLS:      o.UseHttps,
-		}
-		if c.TLS && c.Protocol != HTTP {
-			// Старый скрипт при UseHttps всегда слал по HTTPS, игнорируя Protocol.
-			c.Protocol = HTTP
-		}
-		// Автоматически сгенерированные описания вида «Имя udp\5514» не несут информации.
-		if auto := fmt.Sprintf(`%s %s\%d`, o.Name, o.Protocol, o.Port); !strings.EqualFold(o.Description, auto) {
-			c.Description = o.Description
-		}
-		if strings.EqualFold(o.SpecialChar, "nullbyte") {
-			c.Delimiter = DelimNUL
-		} else {
-			c.Delimiter = DefaultDelimiter(c.Protocol)
-		}
-		out = append(out, c)
-	}
-	return out, nil
-}
-
-// MigrateLegacy сохраняет сконвертированный конфиг в новом формате, оставляя
-// исходный файл рядом с расширением .legacy.bak. Возвращает путь к копии.
-func (s *Store) MigrateLegacy() (string, error) {
-	if !s.Legacy {
-		return "", nil
-	}
-	backup := s.Path + ".legacy.bak"
-	raw, err := os.ReadFile(s.Path)
-	if err != nil {
-		return "", err
-	}
-	if err := os.WriteFile(backup, raw, 0o644); err != nil {
-		return "", err
-	}
-	if err := s.Save(); err != nil {
-		return "", err
-	}
-	s.Legacy = false
-	return backup, nil
 }
 
 // Save атомарно записывает конфиг на диск.
