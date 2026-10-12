@@ -28,7 +28,7 @@ import (
 const name = "kuma_log_sender"
 
 // extras — что кладётся в архив рядом с исполняемым файлом.
-var extras = []string{"collectors.example.json", "README.md", "docs", "logs/examples"}
+var extras = []string{"collectors.example.json", "README.md", "LICENSE", "docs", "logs/examples"}
 
 type entry struct {
 	path string // путь внутри архива
